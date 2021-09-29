@@ -1,0 +1,119 @@
+"""
+     _*_ encoding: utf-8 _*_
+    @Author : JiangYi
+    @Time : 2021/9/17 16:40
+    @ Description:
+"""
+from jqdatasdk import *
+import datetime
+import pandas as pd
+from auto_width import auto_width  # 导入自定义的Excel处理工具
+import re
+import os
+
+
+def main():
+    """
+        第一步: 准备信息
+    """
+    # 日期信息
+    now = datetime.datetime.now()  # 今日信息
+    date = now.strftime('%Y-%m-%d')
+    print(date)
+
+    # 登录信息
+    auth('18874952913', 'Quantumdomain123')  # 登录
+    count = get_query_count()  # 查看当日可使用次数
+    print(count)
+
+    """
+        第二步: 查询信息
+    """
+    # 添加股票池
+    stocks_list = get_industry_stocks('851243')         # 851243 	乳品III
+
+    # 数据保存至file_name
+    file_name = '01速读资产负债表_乳品行业_' + date + '.xlsx'
+    with pd.ExcelWriter(file_name) as writer:
+        for stocks_code in stocks_list:
+            q = query(
+                # 股票信息
+                finance.STK_BALANCE_SHEET.company_name,
+                finance.STK_BALANCE_SHEET.code,
+                finance.STK_BALANCE_SHEET.pub_date,  # pub_date公司发布财报的日期
+                finance.STK_BALANCE_SHEET.end_date,  # end_date财报统计的季度的最后一天
+
+                # 第一步: 查看负债与所有者权益
+                finance.STK_BALANCE_SHEET.total_owner_equities,  # 所有者权益合计
+                finance.STK_BALANCE_SHEET.total_sheet_owner_equities,  # 负债和所有者权益
+
+                # 第二步: 得到有息负债率
+                # 一般情况下，“短期借款”、“长期借款”、“应付债券”、“一年内到期的非流动性负债”为有息负债
+                finance.STK_BALANCE_SHEET.shortterm_loan,  # 短期借款
+                finance.STK_BALANCE_SHEET.longterm_loan,  # 长期借款
+                finance.STK_BALANCE_SHEET.bonds_payable,  # 应付债券
+                finance.STK_BALANCE_SHEET.non_current_liability_in_one_year,  # 一年内到期的非流动负债
+
+            ).filter(
+                finance.STK_BALANCE_SHEET.code == stocks_code,
+                finance.STK_BALANCE_SHEET.pub_date >= '2005',
+                finance.STK_BALANCE_SHEET.report_type == 0,
+                # 只显示年报信息
+                finance.STK_BALANCE_SHEET.end_date.in_(['{}-12-31'.format(x) for x in range(2005, 2021)])
+            )
+
+            # 查询
+            df = finance.run_query(q)
+
+            # df = pd.DataFrame()
+            # 将没有数据的填充为0
+            df = df.fillna(0)
+            # print(df)
+
+            # 有息负债合计
+            liability_with_interest = df['shortterm_loan'] + df['longterm_loan'] + df['bonds_payable'] \
+                                      + df['non_current_liability_in_one_year']
+
+            # 有息负债率
+            liability_with_interest_ratio = liability_with_interest / df['total_sheet_owner_equities']
+
+            # 向指定位置添加列
+            df_columns = df.shape
+            df.insert(df_columns[1], 'liability_with_interest', liability_with_interest_ratio)
+            # print(type(liability_with_interest))
+            # print(liability_with_interest)
+
+            # 更改列名
+            df = df.rename(
+                columns={'company_name': '公司名称',
+                         'code': '股票代码',
+                         'pub_date': '发布日期',
+                         'end_date': '截止日期',
+
+                         'total_owner_equities': '所有者权益合计',
+                         'total_sheet_owner_equities': '负债和所有者权益',
+
+                         'shortterm_loan': '短期借款',
+                         'longterm_loan': '长期借款',
+                         'bonds_payable': '应付债券',
+                         'non_current_liability_in_one_year': '一年内到期的非流动负债',
+
+                         'liability_with_interest': '有息负债率',
+                         })
+
+            # 保存数据
+            company_name = get_security_info(stocks_code).display_name
+            # 修正退市风险的股票命名   原名称 ['伊利股份', '*ST科迪'] 替换后名称 ['伊利股份', 'ST科迪']
+            company_name = re.sub(r'^\*', "", company_name)
+            df.to_excel(writer, sheet_name=company_name)
+
+    # 自动调整excel列宽
+    auto_width(file_name)
+
+    # 提示信息
+    # path = os.system('chdir')
+    print("write data to "  + file_name)
+
+
+if __name__ == "__main__":
+    main()
