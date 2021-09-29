@@ -1,119 +1,968 @@
-"""
-     _*_ encoding: utf-8 _*_
-    @Author : JiangYi
-    @Time : 2021/9/17 16:40
-    @ Description:
-"""
-from jqdatasdk import *
-import datetime
-import pandas as pd
-from auto_width import auto_width  # 导入自定义的Excel处理工具
-import re
-import os
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Awesome-pyecharts</title>
+            <script type="text/javascript" src="https://assets.pyecharts.org/assets/echarts.min.js"></script>
 
-
-def main():
-    """
-        第一步: 准备信息
-    """
-    # 日期信息
-    now = datetime.datetime.now()  # 今日信息
-    date = now.strftime('%Y-%m-%d')
-    print(date)
-
-    # 登录信息
-    auth('18874952913', 'Quantumdomain123')  # 登录
-    count = get_query_count()  # 查看当日可使用次数
-    print(count)
-
-    """
-        第二步: 查询信息
-    """
-    # 添加股票池
-    stocks_list = get_industry_stocks('851243')         # 851243 	乳品III
-
-    # 数据保存至file_name
-    file_name = '01速读资产负债表_乳品行业_' + date + '.xlsx'
-    with pd.ExcelWriter(file_name) as writer:
-        for stocks_code in stocks_list:
-            q = query(
-                # 股票信息
-                finance.STK_BALANCE_SHEET.company_name,
-                finance.STK_BALANCE_SHEET.code,
-                finance.STK_BALANCE_SHEET.pub_date,  # pub_date公司发布财报的日期
-                finance.STK_BALANCE_SHEET.end_date,  # end_date财报统计的季度的最后一天
-
-                # 第一步: 查看负债与所有者权益
-                finance.STK_BALANCE_SHEET.total_owner_equities,  # 所有者权益合计
-                finance.STK_BALANCE_SHEET.total_sheet_owner_equities,  # 负债和所有者权益
-
-                # 第二步: 得到有息负债率
-                # 一般情况下，“短期借款”、“长期借款”、“应付债券”、“一年内到期的非流动性负债”为有息负债
-                finance.STK_BALANCE_SHEET.shortterm_loan,  # 短期借款
-                finance.STK_BALANCE_SHEET.longterm_loan,  # 长期借款
-                finance.STK_BALANCE_SHEET.bonds_payable,  # 应付债券
-                finance.STK_BALANCE_SHEET.non_current_liability_in_one_year,  # 一年内到期的非流动负债
-
-            ).filter(
-                finance.STK_BALANCE_SHEET.code == stocks_code,
-                finance.STK_BALANCE_SHEET.pub_date >= '2005',
-                finance.STK_BALANCE_SHEET.report_type == 0,
-                # 只显示年报信息
-                finance.STK_BALANCE_SHEET.end_date.in_(['{}-12-31'.format(x) for x in range(2005, 2021)])
-            )
-
-            # 查询
-            df = finance.run_query(q)
-
-            # df = pd.DataFrame()
-            # 将没有数据的填充为0
-            df = df.fillna(0)
-            # print(df)
-
-            # 有息负债合计
-            liability_with_interest = df['shortterm_loan'] + df['longterm_loan'] + df['bonds_payable'] \
-                                      + df['non_current_liability_in_one_year']
-
-            # 有息负债率
-            liability_with_interest_ratio = liability_with_interest / df['total_sheet_owner_equities']
-
-            # 向指定位置添加列
-            df_columns = df.shape
-            df.insert(df_columns[1], 'liability_with_interest', liability_with_interest_ratio)
-            # print(type(liability_with_interest))
-            # print(liability_with_interest)
-
-            # 更改列名
-            df = df.rename(
-                columns={'company_name': '公司名称',
-                         'code': '股票代码',
-                         'pub_date': '发布日期',
-                         'end_date': '截止日期',
-
-                         'total_owner_equities': '所有者权益合计',
-                         'total_sheet_owner_equities': '负债和所有者权益',
-
-                         'shortterm_loan': '短期借款',
-                         'longterm_loan': '长期借款',
-                         'bonds_payable': '应付债券',
-                         'non_current_liability_in_one_year': '一年内到期的非流动负债',
-
-                         'liability_with_interest': '有息负债率',
-                         })
-
-            # 保存数据
-            company_name = get_security_info(stocks_code).display_name
-            # 修正退市风险的股票命名   原名称 ['伊利股份', '*ST科迪'] 替换后名称 ['伊利股份', 'ST科迪']
-            company_name = re.sub(r'^\*', "", company_name)
-            df.to_excel(writer, sheet_name=company_name)
-
-    # 自动调整excel列宽
-    auto_width(file_name)
-
-    # 提示信息
-    # path = os.system('chdir')
-    print("write data to "  + file_name)
-
-
-if __name__ == "__main__":
-    main()
+</head>
+<body>
+    <div id="3e9af40c16474616b52a1e0dc6d7d356" class="chart-container" style="width:1920px; height:1200px;"></div>
+    <script>
+        var chart_3e9af40c16474616b52a1e0dc6d7d356 = echarts.init(
+            document.getElementById('3e9af40c16474616b52a1e0dc6d7d356'), 'white', {renderer: 'canvas'});
+        var option_3e9af40c16474616b52a1e0dc6d7d356 = {
+    "animation": true,
+    "animationThreshold": 2000,
+    "animationDuration": 1000,
+    "animationEasing": "cubicOut",
+    "animationDelay": 0,
+    "animationDurationUpdate": 300,
+    "animationEasingUpdate": "cubicOut",
+    "animationDelayUpdate": 0,
+    "color": [
+        "#c23531",
+        "#2f4554",
+        "#61a0a8",
+        "#d48265",
+        "#749f83",
+        "#ca8622",
+        "#bda29a",
+        "#6e7074",
+        "#546570",
+        "#c4ccd3",
+        "#f05b72",
+        "#ef5b9c",
+        "#f47920",
+        "#905a3d",
+        "#fab27b",
+        "#2a5caa",
+        "#444693",
+        "#726930",
+        "#b2d235",
+        "#6d8346",
+        "#ac6767",
+        "#1d953f",
+        "#6950a1",
+        "#918597"
+    ],
+    "series": [
+        {
+            "type": "pie",
+            "name": "2020",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 30532643923.5
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 8915264086.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 5987524183.34
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 2860763927.81
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 2323672139.2
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1832580844.35
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 1723661548.09
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 1591833606.73
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 1505827108.35
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 1289822544.77
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 1071605462.43
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 780196722.7
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 303660714.64
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "300",
+                "200"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2019",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 26274138791.5
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 7416941046.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 6033819726.4
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 2056358255.91
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 2455367884.59
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1265657292.97
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 1178126518.27
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 1225407188.36
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 1729353855.08
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 661227018.09
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 1026612663.44
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 510441032.46
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 1577002760.39
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "740",
+                "200"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2018",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 28037221920.44
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 6784812952.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 5962718412.96
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 1542218010.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 2384799595.56
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1218168919.59
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 1079166992.58
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 1184406733.12
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 1847494887.26
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 487489444.68
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 916663424.86
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 474036979.75
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 1772781881.62
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "1180",
+                "200"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2017",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 25239817505.22
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 6682451147.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 5046981950.4
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 1309755658.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 2941002838.9
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1176556097.5
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 934072526.84
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 1127665194.72
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 1883134899.79
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 398906097.96
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 966543393.84
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 405453599.47
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 1663355862.04
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "1620",
+                "200"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2016",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 23235887876.51
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 6159945278.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 4952937125.66
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 1069294824.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 2899720359.23
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1159926201.11
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 783350628.84
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 760234709.55
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 2906876889.96
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 866972412.68
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 370150561.21
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 1550490544.51
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "300",
+                "480"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2015",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 20145916307.05
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 5263147048.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 5775382416.88
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 1382776956.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 2779466658.95
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1090169873.96
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 691422394.21
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 694327730.13
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 3666704998.59
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 803190993.88
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 1096200686.72
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "740",
+                "480"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2014",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 18821554492.46
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 5199575881.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 1774250228.26
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 1683680166.96
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1373408453.5
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 297004081.23
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 495413588.44
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 3570285012.31
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 739824113.54
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 608243574.25
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "1180",
+                "480"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2013",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 16312781946.38
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 5023786884.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 1670158264.52
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 906832465.69
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1460708258.51
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 281055344.11
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 3913039476.28
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 351792884.08
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 525380508.32
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "1620",
+                "480"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2012",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 7524983654.3
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 4424665226.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 1957064751.65
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 906132846.69
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 1309879929.94
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 103583990.55
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 3396364811.69
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 266151717.56
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 458919425.06
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "300",
+                "760"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2011",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 6305472837.59
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 2834825311.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 1795727062.5
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 878585673.78
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": -24141548.35
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 141916723.89
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 3185175356.29
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 200860341.35
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 0.0
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "740",
+                "760"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2010",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 4512035271.25
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 2686794105.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 1771912269.94
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 748796415.66
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 352767688.96
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 137992394.66
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 1104369786.01
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 0.0
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "1180",
+                "760"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        },
+        {
+            "type": "pie",
+            "name": "2009",
+            "clockwise": true,
+            "data": [
+                {
+                    "name": "\u4f0a\u5229\u80a1\u4efd",
+                    "value": 3709938861.32
+                },
+                {
+                    "name": "\u5149\u660e\u4e73\u4e1a",
+                    "value": 2198104183.0
+                },
+                {
+                    "name": "\u4e09\u5143\u80a1\u4efd",
+                    "value": 1728888174.23
+                },
+                {
+                    "name": "\u65b0\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u7687\u6c0f\u96c6\u56e2",
+                    "value": 723945169.33
+                },
+                {
+                    "name": "\u5999\u53ef\u84dd\u591a",
+                    "value": 419742644.04
+                },
+                {
+                    "name": "\u5929\u6da6\u4e73\u4e1a",
+                    "value": 127186784.52
+                },
+                {
+                    "name": "\u5e84\u56ed\u7267\u573a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u8d1d\u56e0\u7f8e",
+                    "value": 836696595.64
+                },
+                {
+                    "name": "\u4e00\u9e23\u98df\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u71d5\u5858\u4e73\u4e1a",
+                    "value": 0.0
+                },
+                {
+                    "name": "\u718a\u732b\u4e73\u54c1",
+                    "value": 0.0
+                },
+                {
+                    "name": "ST\u79d1\u8fea",
+                    "value": 0.0
+                }
+            ],
+            "radius": [
+                "62px",
+                "100px"
+            ],
+            "center": [
+                "1620",
+                "760"
+            ],
+            "label": {
+                "show": true,
+                "position": "top",
+                "margin": 8,
+                "formatter": "{b}:{d}%"
+            }
+        }
+    ],
+    "legend": [
+        {
+            "data": [
+                "\u4f0a\u5229\u80a1\u4efd",
+                "\u5149\u660e\u4e73\u4e1a",
+                "\u4e09\u5143\u80a1\u4efd",
+                "\u65b0\u4e73\u4e1a",
+                "\u7687\u6c0f\u96c6\u56e2",
+                "\u5999\u53ef\u84dd\u591a",
+                "\u5929\u6da6\u4e73\u4e1a",
+                "\u5e84\u56ed\u7267\u573a",
+                "\u8d1d\u56e0\u7f8e",
+                "\u4e00\u9e23\u98df\u54c1",
+                "\u71d5\u5858\u4e73\u4e1a",
+                "\u718a\u732b\u4e73\u54c1",
+                "ST\u79d1\u8fea"
+            ],
+            "selected": {}
+        }
+    ],
+    "tooltip": {
+        "show": true,
+        "trigger": "item",
+        "triggerOn": "mousemove|click",
+        "axisPointer": {
+            "type": "line"
+        },
+        "showContent": true,
+        "alwaysShowContent": false,
+        "showDelay": 0,
+        "hideDelay": 100,
+        "textStyle": {
+            "fontSize": 14
+        },
+        "borderWidth": 0,
+        "padding": 5
+    }
+};
+        chart_3e9af40c16474616b52a1e0dc6d7d356.setOption(option_3e9af40c16474616b52a1e0dc6d7d356);
+    </script>
+</body>
+</html>
